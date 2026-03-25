@@ -1,30 +1,72 @@
+blueprint:
+  name: TTS ToDo-Liste
+  description: Liest die Todo-Liste vor und markiert alle Einträge als erledigt
+  domain: automation
+  input:
+    todo_entity:
+      name: Todo-Liste
+      description: Die Todo-Listen Entität
+      selector:
+        entity:
+          domain: todo
+    occupancy_sensor:
+      name: Anwesenheitssensor
+      description: Sensor der Anwesenheit erkennt
+      selector:
+        entity:
+          domain: binary_sensor
+    person_entity:
+      name: Person
+      description: Person die zu Hause sein muss
+      selector:
+        entity:
+          domain: person
+    media_player:
+      name: Mediaplayer
+      description: Mediaplayer auf dem vorgelesen wird
+      selector:
+        entity:
+          domain: media_player
+    tts_engine:
+      name: TTS Engine
+      selector:
+        entity:
+          domain: tts
+    conversation_agent:
+      name: Konversations-Agent
+      selector:
+        entity:
+          domain: conversation
+
 alias: TTS ToDo-Liste
 description: ""
+variables:
+  todo_entity: !input todo_entity
 triggers:
   - trigger: binary_sensor.occupancy_detected
     target:
-      entity_id: binary_sensor.esphome_web_93dca4_radar_target
+      entity_id: !input occupancy_sensor
     options:
       behavior: any
 conditions:
   - condition: person.is_home
     target:
-      entity_id: person.marcel_kaiser
+      entity_id: !input person_entity
     options:
       behavior: any
   - condition: template
-    value_template: "{{ states('todo.to_do') | int(0) > 0 }}"
+    value_template: "{{ states(todo_entity) | int(0) > 0 }}"
 actions:
   - action: todo.get_items
     data:
       status: needs_action
     target:
-      entity_id: todo.to_do
-    response_variable: message
+      entity_id: !input todo_entity
+    response_variable: todo_items
   - data:
       language: de
-      text: "{{ message }}"
-      agent_id: conversation.claude_conversation
+      text: "{{ todo_items }}"
+      agent_id: !input conversation_agent
     response_variable: message
     action: conversation.process
   - action: tts.speak
@@ -32,22 +74,17 @@ actions:
     data:
       cache: false
       message: "{{ message.response.speech.plain.speech }}"
-      media_player_entity_id: media_player.kuche
+      media_player_entity_id: !input media_player
     target:
-      entity_id: tts.home_assistant_cloud
+      entity_id: !input tts_engine
     enabled: true
-  - action: todo.get_items
-    data:
-      status: needs_action
-    target:
-      entity_id: todo.to_do
-    response_variable: todo_items_to_delete
   - repeat:
-      for_each: "{{ todo_items_to_delete['todo.to_do']['items'] }}"
+      for_each: "{{ todo_items[todo_entity]['items'] }}"
       sequence:
-        - action: todo.remove_item
+        - action: todo.update_item
           data:
             item: "{{ repeat.item.summary }}"
+            status: completed
           target:
-            entity_id: todo.to_do
+            entity_id: !input todo_entity
 mode: single

@@ -1,0 +1,10 @@
+alias: ToDo-Liste täglich leeren
+description: Löscht alle erledigten Einträge in der Todo-Liste um Mitternacht
+triggers:
+  - trigger: time
+    at: "00:00:00"
+actions:
+  - action: todo.remove_completed_items
+    target:
+      entity_id: todo.to_do
+mode: single
