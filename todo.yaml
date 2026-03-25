@@ -1,0 +1,39 @@
+alias: TTS ToDo-Liste
+description: ""
+triggers:
+  - trigger: binary_sensor.occupancy_detected
+    target:
+      entity_id: binary_sensor.esphome_web_93dca4_radar_target
+    options:
+      behavior: any
+conditions:
+  - condition: person.is_home
+    target:
+      entity_id: person.marcel_kaiser
+    options:
+      behavior: any
+  - condition: template
+    value_template: "{{ states('todo.to_do') | int(0) > 0 }}"
+actions:
+  - action: todo.get_items
+    data:
+      status: needs_action
+    target:
+      entity_id: todo.to_do
+    response_variable: message
+  - data:
+      language: de
+      text: "{{ message }}"
+      agent_id: conversation.claude_conversation
+    response_variable: message
+    action: conversation.process
+  - action: tts.speak
+    metadata: {}
+    data:
+      cache: false
+      message: "{{ message.response.speech.plain.speech }}"
+      media_player_entity_id: media_player.kuche
+    target:
+      entity_id: tts.home_assistant_cloud
+    enabled: true
+mode: single
