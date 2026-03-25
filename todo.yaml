@@ -36,4 +36,18 @@ actions:
     target:
       entity_id: tts.home_assistant_cloud
     enabled: true
+  - action: todo.get_items
+    data:
+      status: needs_action
+    target:
+      entity_id: todo.to_do
+    response_variable: todo_items_to_delete
+  - repeat:
+      for_each: "{{ todo_items_to_delete['todo.to_do']['items'] }}"
+      sequence:
+        - action: todo.remove_item
+          data:
+            item: "{{ repeat.item.summary }}"
+          target:
+            entity_id: todo.to_do
 mode: single
