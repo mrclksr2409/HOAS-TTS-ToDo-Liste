@@ -43,17 +43,13 @@ description: ""
 variables:
   todo_entity: !input todo_entity
 triggers:
-  - trigger: binary_sensor.occupancy_detected
-    target:
-      entity_id: !input occupancy_sensor
-    options:
-      behavior: any
+  - trigger: state
+    entity_id: !input occupancy_sensor
+    to: "on"
 conditions:
-  - condition: person.is_home
-    target:
-      entity_id: !input person_entity
-    options:
-      behavior: any
+  - condition: state
+    entity_id: !input person_entity
+    state: "home"
   - condition: template
     value_template: "{{ states(todo_entity) | int(0) > 0 }}"
 actions:
