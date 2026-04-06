@@ -42,6 +42,7 @@ alias: TTS ToDo-Liste
 description: ""
 variables:
   todo_entity: !input todo_entity
+  media_player: !input media_player
 triggers:
   - trigger: state
     entity_id: !input occupancy_sensor
@@ -74,6 +75,12 @@ actions:
     target:
       entity_id: !input tts_engine
     enabled: true
+  - wait_template: "{{ is_state(media_player, 'playing') }}"
+    timeout: "00:00:30"
+    continue_on_timeout: true
+  - wait_template: "{{ not is_state(media_player, 'playing') }}"
+    timeout: "00:05:00"
+    continue_on_timeout: true
   - repeat:
       for_each: "{{ todo_items[todo_entity]['items'] }}"
       sequence:
